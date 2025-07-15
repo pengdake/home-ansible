@@ -1,0 +1,52 @@
+---
+
+- name: Check disk exists
+  ansible.builtin.stat:
+    path: "{{ nfs_common.device }}"
+  register: disk_stat
+  failed_when: not disk_stat.stat.exists
+  changed_when: false
+
+- name: Install lvm
+  ansible.builtin.apt:
+    name:
+      - "{{ item }}"
+    state: present
+  loop: "{{ lvm.packages }}"
+
+- name: Part disk "{{ nfs_common.device }}"
+  community.general.parted:
+    device: "{{ nfs_common.device }}"
+    number: "{{ nfs_common.part_number }}"
+    state: present
+    label: gpt
+    flags: [lvm]
+
+- name: Inform kernel of partition table changes
+  ansible.builtin.command: partprobe "{{ nfs_common.device }}"
+  register: part_flush
+  changed_when: part_flush.rc == 0
+
+- name: Wait for partition device to appear
+  ansible.builtin.wait_for:
+    path: "{{ lvm.device }}"
+    timeout: 30
+
+- name: Create pv with "{{ lvm.device }}"
+  community.general.lvm_pv:
+    device: "{{ lvm.device }}"
+
+- name: Create vg "{{ lvm.vg }}"
+  community.general.lvg:
+    vg: "{{ lvm.vg }}"
+    pvs:
+      - "{{ lvm.device }}"
+
+- name: Create lv "{{ lvm.lv }}"
+  community.general.lvol:
+    vg: "{{ lvm.vg }}"
+    lv: "{{ lvm.lv }}"
+    size: "{{ lvm.size }}"
+    pvs:
+      - "{{ lvm.device }}"
+    state: present

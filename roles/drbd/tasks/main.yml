@@ -1,0 +1,67 @@
+- name: Install drbd
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ drbd.packages }}"
+
+- name: Config drbd
+  ansible.builtin.template:
+    src: nfs.res.j2
+    dest: /etc/drbd.d/nfs.res
+    mode: "0644"
+
+- name: Check drbd resource status
+  ansible.builtin.command: drbdadm status nfs
+  register: drbd_nfs_status
+  changed_when: false
+  failed_when: false
+  ignore_errors: true
+
+- name: Init drbd
+  ansible.builtin.command: "drbdadm create-md --force nfs"
+  register: drbd_init
+  failed_when:
+    - "'exists' not in drbd_init.stderr"
+    - drbd_init.rc != 0
+  changed_when: true
+  when: "'nfs' not in (drbd_nfs_status.stdout | default(''))"
+
+
+- name: Bring up drbd nfs resource
+  ansible.builtin.command: drbdadm up nfs
+  register: drbd_up
+  changed_when: drbd_up.rc == 0
+  when: "'UpToDate' not in (drbd_nfs_status.stdout | default(''))"
+
+- name: Set drbd primary
+  ansible.builtin.command: drbdadm primary --force nfs
+  register: drbd_primary_set
+  when:
+    - (drbd_primary | default(false) | bool)
+    - "'Primary' not in (drbd_nfs_status.stdout | default(''))"
+  changed_when: drbd_primary_set.rc == 0
+
+- name: "Init filesystem in master on {{ drbd.device }}"
+  community.general.filesystem:
+    fstype: ext4
+    dev: "{{ drbd.device }}"
+  when:
+    - (drbd_primary | default(false) | bool)
+
+- name: "Mount device in master to path {{ nfs_common.mount_point }}"
+  ansible.posix.mount:
+    path: "{{ nfs_common.mount_point }}"
+    src: "{{ drbd.device }}"
+    fstype: ext4
+    state: mounted
+    opts: noauto,_netdev,nofail
+  when:
+    - (drbd_primary | default(false) | bool)
+
+- name: "Add mount info to fstab with path {{ nfs_common.mount_point }}"
+  ansible.posix.mount:
+    path: "{{ nfs_common.mount_point }}"
+    src: "{{ drbd.device }}"
+    fstype: ext4
+    state: present
+    opts: noauto,_netdev,nofail

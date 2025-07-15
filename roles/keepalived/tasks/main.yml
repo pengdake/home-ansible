@@ -1,0 +1,32 @@
+- name: Install keepalived
+  ansible.builtin.apt:
+    name:
+      - "{{ item }}"
+    state: present
+  loop: "{{ keepalived.packages }}"
+
+- name: Create scripts for keepalived
+  ansible.builtin.template:
+    src: "{{ item }}.sh.j2"
+    dest: "/etc/keepalived/{{ item }}.sh"
+    mode: "0755"
+  loop:
+    - "notify_master"
+    - "notify_backup"
+    - "notify_fault"
+    - "chk_nfs"
+
+- name: Config keepalived
+  ansible.builtin.template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    mode: "0644"
+    trim_blocks: true
+    lstrip_blocks: true
+  notify: Restart keepalived
+
+- name: Bring up keepalived
+  ansible.builtin.service:
+    name: "{{ keepalived.service }}"
+    state: started
+    enabled: true

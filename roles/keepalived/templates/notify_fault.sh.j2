@@ -1,0 +1,8 @@
+#!/bin/bash
+# 退本地故障时执行
+
+logger "Keepalived: fault occurred (NFS)"
+
+systemctl stop nfs-server
+umount -f {{ nfs_common.mount_point }}
+drbdadm secondary nfs

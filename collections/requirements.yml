@@ -1,0 +1,8 @@
+# collections/requirements.yml
+collections:
+  - name: community.general     # 最新稳定版
+    version: ">=5.0.0"
+  - name: ansible.utils          # 辅助过滤器等
+    version: "3.0.0"
+  - name: ansible.posix
+    version: "2.0.0"

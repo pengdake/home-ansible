@@ -1,0 +1,19 @@
+- name: Install nfs
+  ansible.builtin.apt:
+    name:
+      - "{{ item }}"
+    state: present
+  when: ansible_facts["pkg_mgr"] == "apt"
+  loop: "{{ nfs.packages }}"
+
+- name: Config nfs mount by file
+  ansible.builtin.template:
+    src: exports.j2
+    dest: /etc/exports
+    mode: "0644"
+
+- name: Bring up nfs service
+  ansible.builtin.service:
+    name: "{{ nfs.service }}"
+    state: started
+    enabled: true

@@ -1,0 +1,42 @@
+nfs_common:
+  device: "/dev/sda"
+  part_number: 1
+  mount_point: "/nfs"
+
+drbd:
+  service: "drbd"
+  packages:
+    - "drbd-utils"
+  resource: "nfs"               # 资源名（建议加引号）
+  device: "/dev/drbd0"          # DRBD设备路径（建议加引号）
+  port: 7788                    # 端口（数字可省略引号）
+  protocol: "C"                 # 同步协议（C为强一致性）
+  disk: "/dev/{{ lvm.vg }}/{{ lvm.lv }}"
+
+lvm:
+  packages:
+    - "parted"
+    - "lvm2"
+  vg: "vg_nfs"                  # 卷组名
+  lv: "lv_nfs"                  # 逻辑卷名
+  size: "300G"                  # 大小（建议加引号避免解析问题）
+  fstype: "ext4"                # 文件系统类型
+  device: "{{ nfs_common.device }}{{ nfs_common.part_number }}"
+
+nfs:
+  packages: 
+    - "nfs-kernel-server"
+    - "nfs-common" 
+  service: "nfs-server"
+
+keepalived:
+  packages:
+    - "keepalived"
+  service: "keepalived"
+  vip: "192.168.31.90/24"          # 虚拟IP
+  interface: "eth0"             # 网卡名
+  router_id: 51                 # 路由ID（数字可无引号）
+  auth_pass: "1111"             # 认证密码
+  master_priority: 100          # 主节点优先级
+  backup_priority: 90          # 备节点优先级
+  advert_int: 1                # 广播间隔

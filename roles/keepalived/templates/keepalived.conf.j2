@@ -1,0 +1,36 @@
+vrrp_script chk_nfs {
+    script "/etc/keepalived/chk_nfs.sh"
+    interval  3
+    weight -30
+    fall   3
+    rise   3
+}
+
+vrrp_instance VI_1 {
+    {% if drbd_primary | bool %}
+    state MASTER
+    priority {{ keepalived.master_priority }}
+    {% else %}
+    state BACKUP
+    priority {{ keepalived.backup_priority }}
+    {% endif %}
+    interface {{ keepalived.interface }}                     
+    virtual_router_id {{ keepalived.router_id }}
+    advert_int {{ keepalived.advert_int }}
+    nopreempt
+    authentication {
+        auth_type PASS
+        auth_pass {{ keepalived.auth_pass }}
+    }
+    virtual_ipaddress {
+        {{ keepalived.vip }} dev {{ keepalived.interface }}
+    }
+
+    track_script {
+        chk_nfs
+    }
+
+    notify_master "/etc/keepalived/notify_master.sh"
+    notify_backup "/etc/keepalived/notify_backup.sh"
+    notify_fault  "/etc/keepalived/notify_fault.sh"
+}

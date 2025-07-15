@@ -1,0 +1,8 @@
+#!/bin/bash
+# 切换为主节点时执行
+
+logger "Keepalived: switching to MASTER (NFS)"
+
+drbdadm primary --force nfs
+mount {{ drbd.device }} {{ nfs_common.mount_point }}
+systemctl start nfs-server

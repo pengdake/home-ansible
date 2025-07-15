@@ -1,0 +1,4 @@
+#!/bin/bash
+
+systemctl is-active --quiet {{ nfs.service }} || exit 1
+exit 0

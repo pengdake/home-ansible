@@ -1,0 +1,8 @@
+#!/bin/bash
+# 退回为备节点时执行
+
+logger "Keepalived: switching to BACKUP (NFS)"
+
+systemctl stop nfs-server
+umount {{ nfs_common.mount_point }}
+drbdadm secondary nfs

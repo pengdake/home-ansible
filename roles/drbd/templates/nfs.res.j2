@@ -1,0 +1,15 @@
+resource nfs {
+    protocol C;
+    {% for host in groups["nfs"] %}
+    on {{ host }} {
+        device           {{ drbd.device }};
+        disk             {{ drbd.disk }};
+        address          {{ hostvars[host].ansible_host }}:{{ drbd.port }};
+        meta-disk        internal;
+    }
+    {% endfor %}
+    net {
+        allow-two-primaries no;
+        after-sb-0pri discard-zero-changes;
+    }
+}

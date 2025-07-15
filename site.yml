@@ -1,0 +1,8 @@
+- name: Configure NFS cluster
+  hosts: nfs
+  become: true
+  roles:
+    - lvm
+    - drbd
+    - nfs
+    - keepalived
