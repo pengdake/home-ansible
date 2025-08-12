@@ -3,6 +3,7 @@
 
 logger "Keepalived: switching to MASTER (NFS)"
 
+drbdadm up nfs
 drbdadm primary --force nfs
 mount {{ drbd.device }} {{ nfs_common.mount_point }}
 systemctl start nfs-server

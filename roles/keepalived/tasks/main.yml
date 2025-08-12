@@ -29,4 +29,4 @@
   ansible.builtin.service:
     name: "{{ keepalived.service }}"
     state: started
-    enabled: true
+    enabled: false

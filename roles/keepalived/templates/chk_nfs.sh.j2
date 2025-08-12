@@ -1,4 +1,13 @@
 #!/bin/bash
+VIP="{{ nfs.vip }}"
+SERVICE="{{ nfs.service }}"
 
-systemctl is-active --quiet {{ nfs.service }} || exit 1
+# 检查当前节点是否持有 VIP
+if ip addr | grep -qw "${VIP}"; then
+    # 如果持有 VIP，但服务没起来，则返回 1
+    if ! systemctl is-active --quiet "${SERVICE}"; then
+        exit 1
+    fi
+fi
+
 exit 0

@@ -19,7 +19,7 @@ lvm:
     - "lvm2"
   vg: "vg_nfs"                  # 卷组名
   lv: "lv_nfs"                  # 逻辑卷名
-  size: "300G"                  # 大小（建议加引号避免解析问题）
+  size: "600G"                  # 大小（建议加引号避免解析问题）
   fstype: "ext4"                # 文件系统类型
   device: "{{ nfs_common.device }}{{ nfs_common.part_number }}"
 
@@ -28,13 +28,15 @@ nfs:
     - "nfs-kernel-server"
     - "nfs-common" 
   service: "nfs-server"
+  vip: "192.168.31.90"
 
 keepalived:
   packages:
     - "keepalived"
   service: "keepalived"
   vip: "192.168.31.90/24"          # 虚拟IP
-  interface: "eth0"             # 网卡名
+  master_interface: "eth0"             # 网卡名（主节点）
+  backup_interface: "br0"            # 网卡名（备节点）
   router_id: 51                 # 路由ID（数字可无引号）
   auth_pass: "1111"             # 认证密码
   master_priority: 100          # 主节点优先级
