@@ -1,5 +1,5 @@
 global_defs {
-    script_security
+    enable_script_security
     script_user root
 }
 
@@ -11,7 +11,7 @@ vrrp_script chk_nfs {
     rise   3
 }
 
-vrrp_instance VI_1 {
+vrrp_instance nfs-vip {
     state BACKUP
     {% if drbd_primary | bool %}
     #state MASTER

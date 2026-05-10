@@ -41,12 +41,20 @@
     - "'Primary' not in (drbd_nfs_status.stdout | default(''))"
   changed_when: drbd_primary_set.rc == 0
 
+- name: Check drbd resource status again
+  ansible.builtin.command: drbdadm status nfs
+  register: drbd_nfs_new_status
+  changed_when: false
+  failed_when: false
+  ignore_errors: true
+
 - name: "Init filesystem in master on {{ drbd.device }}"
   community.general.filesystem:
     fstype: ext4
     dev: "{{ drbd.device }}"
   when:
     - (drbd_primary | default(false) | bool)
+    - "'nfs role:Primary' in (drbd_nfs_new_status.stdout | default(''))"
 
 - name: "Mount device in master to path {{ nfs_common.mount_point }}"
   ansible.posix.mount:
@@ -57,6 +65,7 @@
     opts: noauto,_netdev,nofail
   when:
     - (drbd_primary | default(false) | bool)
+    - "'nfs role:Primary' in (drbd_nfs_new_status.stdout | default(''))"
 
 - name: "Add mount info to fstab with path {{ nfs_common.mount_point }}"
   ansible.posix.mount:
